@@ -118,8 +118,6 @@ services:
       - ${DOCKERDIR}/app_data/radarr:/config
       - ${MEDIADIR}/app_data/downloads/completed:/downloads
       - ${MEDIADIR}/movies:/movies
-      - ${MEDIADIR}/bmovies:/bmovies
-      - ${MEDIADIR}/smovies:/smovies
     networks:
       - inside_network
   # Radarr: movie download application
