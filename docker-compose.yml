@@ -1,0 +1,163 @@
+
+version: "3"
+# Networks
+# Create the networks before running docker-compose up -d
+# docker network create inside_network
+# docker network create outside_network
+
+networks:
+  outside_network:
+    external:
+      name: outside_network
+  inside_network:
+    external:
+      name: inside_network
+
+# Applications
+# [9000] Transmission web UI
+# [9001] Jackett
+# [9002] Radarr
+# [9003] Sonarr
+# [9004] Tautulli
+
+services:
+  # Portainer: Portainer agent for remote management
+  #
+  portainer_agent:
+    image: portainer/agent
+    container_name: portainer-agent
+    restart: always
+    ports:
+      - "10000:9001"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/volumes:/var/lib/docker/volumes
+
+  # Transmission: Download client with VPN over IP Vanish
+  #
+  transmission:
+    image: haugene/transmission-openvpn
+    container_name: transmission-openvpn
+    restart: unless-stopped
+    ports:
+      - "9000:9091" # Admin console
+      - "8888:8888" # Proxy port
+    cap_add:
+      - NET_ADMIN # Allows changes to the network without running as root
+    dns:
+      - 1.1.1.1 # Cloudflare DNS servers
+      - 1.0.0.1
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      # Application variables
+      - OPENVPN_PROVIDER=${VPN_PROVIDER}
+      - OPENVPN_CONFIG=${VPN_CONFIG}
+      - OPENVPN_USERNAME=${VPN_USERNAME}
+      - OPENVPN_PASSWORD=${VPN_PASSWORD}
+      - OPENVPN_OPTS=--inactive 3600 --ping 10 --ping-exit 60
+      - CREATE_TUN_DEVICE=true
+      - LOCAL_NETWORK=${LOCAL_NETWORK}
+      - TRANSMISSION_RPC_AUTHENTICATION_REQUIRED=true
+      - TRANSMISSION_RPC_HOST_WHITELIST="127.0.0.1,192.168.*.*"
+      - TRANSMISSION_RPC_USERNAME=${TRANSMISSION_USERNAME}
+      - TRANSMISSION_RPC_PASSWORD=${TRANSMISSION_PASSWORD}
+      - TRANSMISSION_UMASK=0
+      - TRANSMISSION_RATIO_LIMIT_ENABLED=true
+      - TRANSMISSION_RATIO_LIMIT=0
+      - TRANSMISSION_DOWNLOAD_DIR=/downloads
+      - TRANSMISSION_INCOMPLETE_DIR=/incomplete
+      - WEBPROXY_ENABLED=true
+      - WEBPROXY_PORT=8888
+    volumes:
+      - ${DOCKERDIR}/app_data/transmission:/data
+      - ${MEDIADIR}/app_data/downloads/completed:/downloads
+      - ${MEDIADIR}/app_data/downloads/incomplete:/incomplete
+    networks:
+      - outside_network
+  
+  # Jackett: torrent proxy service
+  # Configure Jackett to route across tiny proxy http://transmission-ovpn:8888 
+  #
+  jackett:
+    image: "linuxserver/jackett"
+    container_name: jackett
+    restart: unless-stopped
+    ports:
+      - "9001:9117"
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${DOCKERDIR}/app_data/jackett:/config
+      - ${DOCKERDIR}/app_data/jackett:/data
+    networks:
+      - inside_network
+  # Radarr: movie download application
+  # 
+  radarr:
+    image: "linuxserver/radarr"
+    container_name: radarr
+    restart: unless-stopped
+    ports:
+      - "9002:7878"
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - UMASK_SET=0
+    volumes:
+      - ${DOCKERDIR}/app_data/radarr:/config
+      - ${MEDIADIR}/app_data/downloads/completed:/downloads
+      - ${MEDIADIR}/movies:/movies
+      - ${MEDIADIR}/bmovies:/bmovies
+      - ${MEDIADIR}/smovies:/smovies
+    networks:
+      - inside_network
+  # Radarr: movie download application
+  # 
+  sonarr:
+    image: "linuxserver/sonarr"
+    container_name: sonarr
+    restart: unless-stopped
+    ports:
+      - "9003:8989"
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - UMASK_SET=0
+    volumes:
+      - ${DOCKERDIR}/app_data/sonarr:/config
+      - ${MEDIADIR}/app_data/downloads/completed:/downloads
+      - ${MEDIADIR}/tv:/tv
+    networks:
+      - inside_network
+  # Tautulli: PLEX server monitoring
+  #
+  tautulli:
+    image: ghcr.io/linuxserver/tautulli
+    container_name: tautulli
+    restart: unless-stopped
+    ports:
+      - "9004:8181"
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${DOCKERDIR}/app_data/tautulli:/config"
+    networks:
+      - inside_network
