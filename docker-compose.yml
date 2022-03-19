@@ -1,24 +1,47 @@
-
-version: "3"
-# Networks
-# Create the networks before running docker-compose up -d
+# Media stack - Kris 22
+# 
+# Create networks before running docker-compose -p media up -d
 # docker network create inside_network
-# docker network create outside_network
 
-networks:
-  outside_network:
-    external:
-      name: outside_network
-  inside_network:
-    external:
-      name: inside_network
+# .env file variables:
+# $PUID
+# $PGID
+# $TZ i.e. "Europe/London" 
+# $DOCKERDIR location of docker and configuration files
 
-# Applications
+# Transmission
+#
+# LOCAL_NETWORK  CIDR format: i.e. 192.168.1.0/24
+# TRANSMISSION_USERNAME anything you like
+# TRANSMISSION_PASSWORD anything you like
+# MEDIADIR base location for media files, expects subfolders:
+# - app_data
+# - app_data/downloads
+# - app_data/downloads/complete
+# - app_data/downloads/incomplete
+# - movies
+# - tv
+
+# VPN: for config options: https://haugene.github.io/docker-transmission-openvpn/
+# VPN_PROVIDER 
+# VPN_CONFIG
+# VPN_USERNAME
+# VPN_PASSWORD
+
+# Stack applications
 # [9000] Transmission web UI
+# [8888] Tinyproxy
 # [9001] Jackett
 # [9002] Radarr
 # [9003] Sonarr
 # [9004] Tautulli
+
+version: "3.7"
+
+networks:
+  inside_network:
+    external:
+      name: inside_network
 
 services:
   # Portainer: Portainer agent for remote management
@@ -40,12 +63,12 @@ services:
     container_name: transmission-openvpn
     restart: unless-stopped
     ports:
-      - "9000:9091" # Admin console
-      - "8888:8888" # Proxy port
+      - "9000:9091"
+      - "8888:8888"
     cap_add:
-      - NET_ADMIN # Allows changes to the network without running as root
+      - NET_ADMIN
     dns:
-      - 1.1.1.1 # Cloudflare DNS servers
+      - 1.1.1.1 # Change DNS if needed
       - 1.0.0.1
     security_opt:
       - no-new-privileges:true
@@ -53,7 +76,6 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
-      # Application variables
       - OPENVPN_PROVIDER=${VPN_PROVIDER}
       - OPENVPN_CONFIG=${VPN_CONFIG}
       - OPENVPN_USERNAME=${VPN_USERNAME}
@@ -62,7 +84,7 @@ services:
       - CREATE_TUN_DEVICE=true
       - LOCAL_NETWORK=${LOCAL_NETWORK}
       - TRANSMISSION_RPC_AUTHENTICATION_REQUIRED=true
-      - TRANSMISSION_RPC_HOST_WHITELIST="127.0.0.1,192.168.*.*"
+      - TRANSMISSION_RPC_HOST_WHITELIST="127.0.0.1,192.168.*.*" # Add additional networks as required
       - TRANSMISSION_RPC_USERNAME=${TRANSMISSION_USERNAME}
       - TRANSMISSION_RPC_PASSWORD=${TRANSMISSION_PASSWORD}
       - TRANSMISSION_UMASK=0
@@ -70,17 +92,16 @@ services:
       - TRANSMISSION_RATIO_LIMIT=0
       - TRANSMISSION_DOWNLOAD_DIR=/downloads
       - TRANSMISSION_INCOMPLETE_DIR=/incomplete
-      - WEBPROXY_ENABLED=true
+      - WEBPROXY_ENABLED=true # Used to route Jackett traffic
       - WEBPROXY_PORT=8888
     volumes:
       - ${DOCKERDIR}/app_data/transmission:/data
       - ${MEDIADIR}/app_data/downloads/completed:/downloads
       - ${MEDIADIR}/app_data/downloads/incomplete:/incomplete
     networks:
-      - outside_network
+      - inside_network
   
-  # Jackett: torrent proxy service
-  # Configure Jackett to route across tiny proxy http://transmission-ovpn:8888 
+  # Jackett: proxy for Radarr and Sonarr
   #
   jackett:
     image: "linuxserver/jackett"
@@ -99,7 +120,7 @@ services:
       - ${DOCKERDIR}/app_data/jackett:/data
     networks:
       - inside_network
-  # Radarr: movie download application
+  # Radarr: movie downloader
   # 
   radarr:
     image: "linuxserver/radarr"
@@ -120,7 +141,7 @@ services:
       - ${MEDIADIR}/movies:/movies
     networks:
       - inside_network
-  # Radarr: movie download application
+  # Radarr: TV downloader
   # 
   sonarr:
     image: "linuxserver/sonarr"
