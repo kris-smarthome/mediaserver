@@ -26,7 +26,7 @@ TRANSMISSION_USERNAME [anythingyoulike]
 TRANSMISSION_PASSWORD [anythingyoulike]
 MEDIADIR [The root path of your media source, see above note]
 
-- VPN configuration is documented here: https://haugene.github.io/docker-transmission-openvpn/
+VPN configuration is documented here: https://haugene.github.io/docker-transmission-openvpn/
 - VPN_PROVIDER
 - VPN_CONFIG
 - VPN_USERNAME
