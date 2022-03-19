@@ -29,12 +29,13 @@
 # VPN_PASSWORD
 
 # Stack applications
-# [9000] Transmission web UI
-# [8888] Tinyproxy
-# [9001] Jackett
-# [9002] Radarr
-# [9003] Sonarr
-# [9004] Tautulli
+# [9000]  Transmission web UI
+# [8888]  Tinyproxy
+# [9001]  Jackett
+# [9002]  Radarr
+# [9003]  Sonarr
+# [9004]  Tautulli
+# [10000] Portainer agent
 
 version: "3.7"
 
