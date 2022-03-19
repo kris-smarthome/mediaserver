@@ -26,11 +26,11 @@ TRANSMISSION_USERNAME [anythingyoulike]
 TRANSMISSION_PASSWORD [anythingyoulike]
 MEDIADIR [The root path of your media source, see above note]
 
-VPN configuration is documented here: https://haugene.github.io/docker-transmission-openvpn/
-VPN_PROVIDER
-VPN_CONFIG
-VPN_USERNAME
-VPN_PASSWORD
+- VPN configuration is documented here: https://haugene.github.io/docker-transmission-openvpn/
+- VPN_PROVIDER
+- VPN_CONFIG
+- VPN_USERNAME
+- VPN_PASSWORD
 
 View the PUID and PGID for the current user using the ```id``` command.
 
