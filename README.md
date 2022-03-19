@@ -8,7 +8,7 @@ This stack expects a base directory structure at the root of your media folder/d
 - $MEDIADIR/app_data/downloads/complete
 - $MEDIADIR/app_data/downloads/incomplete
 - $MEDIADIR/movies
-- $MEDIADIRtv
+- $MEDIADIR/tv
 
 Create networks:
 ```
