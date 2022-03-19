@@ -3,12 +3,12 @@ Docker compose file for a torrent based download server. Includes Tautulli for P
 
 This stack expects a base directory structure at the root of your media folder/drive which is set in the .env folder i.e MEDIADIR=/mnt/media. Create the following structure before bringing the stack up.
 
-$MEDIADIR/app_data
-$MEDIADIR/app_data/downloads
-$MEDIADIR/app_data/downloads/complete
-$MEDIADIR/app_data/downloads/incomplete
-$MEDIADIR/movies
-$MEDIADIRtv
+- $MEDIADIR/app_data
+- $MEDIADIR/app_data/downloads
+- $MEDIADIR/app_data/downloads/complete
+- $MEDIADIR/app_data/downloads/incomplete
+- $MEDIADIR/movies
+- $MEDIADIRtv
 
 Create networks:
 ```
