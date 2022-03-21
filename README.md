@@ -21,10 +21,10 @@ Set the following variables in the .env file, examples are given in square brack
 - TZ ["Europe/London"]
 - DOCKERDIR ["/home/user/docker"]
 
-LOCAL_NETWORK [Networks allowed to access the web UI in CIDR format: i.e. 192.168.1.0/24]
-TRANSMISSION_USERNAME [anythingyoulike]
-TRANSMISSION_PASSWORD [anythingyoulike]
-MEDIADIR [The root path of your media source, see above note]
+-  LOCAL_NETWORK [Networks allowed to access the web UI in CIDR format: i.e. 192.168.1.0/24]
+- TRANSMISSION_USERNAME [anythingyoulike]
+- TRANSMISSION_PASSWORD [anythingyoulike]
+- MEDIADIR [The root path of your media source, see above note]
 
 VPN configuration is documented here: https://haugene.github.io/docker-transmission-openvpn/
 - VPN_PROVIDER
