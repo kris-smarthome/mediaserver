@@ -52,3 +52,6 @@ Additional applications:
 
 ## Post installation
 No post installation tasks will be covered in this repository.
+
+### Updating containers
+A simple bash script for updating your docker containers: https://gist.github.com/kris-smarthome/f759238723c1fff33f24ece580359a46
