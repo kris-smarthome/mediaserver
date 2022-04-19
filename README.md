@@ -1,5 +1,5 @@
 # Media
-Docker compose file for a torrent based download server. Includes Tautulli for PLex monitoring if required. Tiny proxy is enabled by default on port 8888 if routing traffic across the VPN from any other container or host if needed, when using the proxy for containers in this stack, the container name can be used. Remember to create the inside_network and set environment variables before bringing up the stack.
+Docker compose file for a torrent based download server. Includes Tautulli for PLex monitoring if required. Tiny proxy is enabled by default on port 8888 if routing traffic across the VPN from any other container or host if needed, when using the proxy for containers in this stack, the container name can be used.
 
 This stack expects a base directory structure at the root of your media folder/drive which is set in the .env folder i.e MEDIADIR=/mnt/media. Create the following structure before bringing the stack up.
 
@@ -10,10 +10,6 @@ This stack expects a base directory structure at the root of your media folder/d
 - $MEDIADIR/movies
 - $MEDIADIR/tv
 
-Create networks:
-```
-sudo docker network create inside_network
-```
 
 Set the following variables in the .env file, examples are given in square brackets:
 - PUID [the PUID of your user account] 

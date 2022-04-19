@@ -1,7 +1,5 @@
 # Media stack - Kris 22
 # 
-# Create networks before running docker-compose -p media up -d
-# docker network create inside_network
 
 # .env file variables:
 # $PUID
@@ -80,8 +78,6 @@ services:
       - IGNORE="portainer-agent"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - inside_network
   # NVIDIA toolkit: Transcoding using NVIDIA hardware.
   #
   # Configure the host with the Nvidia toolkit for NVIDIA transcoding
@@ -148,8 +144,6 @@ services:
       - ${MEDIADIR}/app_data/downloads/completed:/downloads
       - ${MEDIADIR}/app_data/downloads/incomplete:/incomplete
       - /etc/localtime:/etc/localtime:ro    
-    networks:
-      - inside_network
   # Jackett: proxy for Radarr and Sonarr
   #
   jackett:
@@ -168,8 +162,6 @@ services:
       - ${DOCKERDIR}/app_data/jackett:/config
       - ${DOCKERDIR}/app_data/jackett:/data
       - /etc/localtime:/etc/localtime:ro
-    networks:
-      - inside_network
   # Radarr: movie downloader
   # 
   radarr:
@@ -190,8 +182,6 @@ services:
       - ${MEDIADIR}/app_data/downloads/completed:/downloads
       - ${MEDIADIR}/movies:/movies
       - /etc/localtime:/etc/localtime:ro
-    networks:
-      - inside_network
   # Radarr: TV downloader
   # 
   sonarr:
@@ -212,8 +202,6 @@ services:
       - ${MEDIADIR}/app_data/downloads/completed:/downloads
       - ${MEDIADIR}/tv:/tv
       - /etc/localtime:/etc/localtime:ro
-    networks:
-      - inside_network
   # Tdarr: Media transcoder
   #
   tdarr:
@@ -266,5 +254,3 @@ services:
       - ${DOCKERDIR}/app_data/tautulli:/config
       - ${DOCKERDIR}/app_data/plex:/logs
       - /etc/localtime:/etc/localtime:ro
-    networks:
-      - inside_network
