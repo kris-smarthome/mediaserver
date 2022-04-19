@@ -40,11 +40,6 @@
 
 version: "3.7"
 
-networks:
-  inside_network:
-    external:
-      name: inside_network
-
 services:
   # Portainer: Portainer agent for remote management
   #
