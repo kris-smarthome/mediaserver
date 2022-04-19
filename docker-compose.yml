@@ -100,7 +100,7 @@ services:
       - VERSION=docker
       - PLEX_CLAIM=${PLEXCLAIM} # optional argument
     volumes:
-      - ${DOCKER_DIR}/app_data/plex:/config
+      - ${DOCKERDIR}/app_data/plex:/config
       - ${MEDIADIR}/tv:/tv
       - ${MEDIADIR}/movies:/movies
       - ${MEDIADIR}/transcode:/transcode
