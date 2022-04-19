@@ -51,6 +51,7 @@ Applications included with this stack:
 
 Additional applications:
 - [10000] Portainer agent
+- [10001] Ouroboros: Updates all containers except for Portainer agent.
 
 ## Post installation
 No post installation tasks will be covered in this repository.
