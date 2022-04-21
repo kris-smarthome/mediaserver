@@ -49,6 +49,7 @@ Applications included with this stack:
 - [9002]  Radarr
 - [9003]  Sonarr
 - [9004]  Tautulli
+- [8191]  Flaresolverr
 
 Additional applications:
 - [10000] Portainer agent
