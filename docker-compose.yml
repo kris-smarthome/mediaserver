@@ -135,7 +135,9 @@ services:
       - WEBPROXY_ENABLED=true # Used to route Jackett traffic
       - WEBPROXY_PORT=8888
     volumes:
-      - ${DOCKERDIR}/app_data/transmission:/data
+      - ${DOCKERDIR}/app_data/transmission/config:/config
+      - ${DOCKERDIR}/app_data/transmission/data:/data
+      - ${DOCKERDIR}/app_data/transmission/shared:/shared
       - ${MEDIADIR}/app_data/downloads/completed:/downloads
       - ${MEDIADIR}/app_data/downloads/incomplete:/incomplete
       - /etc/localtime:/etc/localtime:ro    
