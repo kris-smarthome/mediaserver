@@ -9,6 +9,7 @@ This stack expects a base directory structure at the root of your media folder/d
 - $MEDIADIR/app_data/downloads/incomplete
 - $MEDIADIR/movies
 - $MEDIADIR/tv
+- $MEDIADIR/transcode
 
 
 Set the following variables in the .env file, examples are given in square brackets:
@@ -44,7 +45,7 @@ Applications included with this stack:
 - [32400] PLEX
 - [9000]  Transmission web UI
 - [8888]  Tinyproxy
-- [9001]  Jackett
+- [9001]  Prowlarr
 - [9002]  Radarr
 - [9003]  Sonarr
 - [9004]  Tautulli
@@ -57,4 +58,4 @@ Additional applications:
 No post installation tasks will be covered in this repository.
 
 ### Updating containers
-A simple bash script for updating your docker containers: https://gist.github.com/kris-smarthome/f759238723c1fff33f24ece580359a46
+All containers are updated with Ouroboros with the exception of portainer-agent (I've found this to be problematic.) If needed. a simple bash script for updating your docker containers: https://gist.github.com/kris-smarthome/f759238723c1fff33f24ece580359a46 can be used.
