@@ -30,11 +30,12 @@
 # [3420]  PLEX
 # [9000]  Transmission web UI
 # [8888]  Tinyproxy
-# [9001]  Jackett
+# [9001]  Prowlarr
 # [9002]  Radarr
 # [9003]  Sonarr
 # [9004]  Tdarr
 # [9005]  Tautulli
+# [8191]  Flaresolverr
 # [10000] Portainer agent
 # [10001] Ouroboros 
 
@@ -137,18 +138,18 @@ services:
     volumes:
       - ${DOCKERDIR}/app_data/transmission/config:/config
       - ${DOCKERDIR}/app_data/transmission/data:/data
-      - ${DOCKERDIR}/app_data/transmission/shared:/shared
+      - ${DOCKERDIR}/app_data/transmission/shared:/data
       - ${MEDIADIR}/app_data/downloads/completed:/downloads
       - ${MEDIADIR}/app_data/downloads/incomplete:/incomplete
-      - /etc/localtime:/etc/localtime:ro    
-  # Jackett: proxy for Radarr and Sonarr
-  #
-  jackett:
-    image: "linuxserver/jackett"
-    container_name: jackett
+      - /etc/localtime:/etc/localtime:ro     
+  # Prowwlarr: Torrtent proxy
+  # 
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:develop
+    container_name: prowlarr
     restart: unless-stopped
     ports:
-      - "9001:9117"
+      - "9001:9696"
     security_opt:
       - no-new-privileges:true
     environment:
@@ -156,9 +157,28 @@ services:
       - PGID=${PGID}
       - TZ=${TZ}
     volumes:
-      - ${DOCKERDIR}/app_data/jackett:/config
-      - ${DOCKERDIR}/app_data/jackett:/data
+      - ${DOCKERDIR}/app_data/prowlarr:/config
       - /etc/localtime:/etc/localtime:ro
+
+  # Jackett: torrent poxy: replaced by Prowlarr 
+  #
+  #jackett:
+  #  image: "linuxserver/jackett"
+  #  container_name: jackett
+  #  restart: unless-stopped
+  #  ports:
+  #    - "9001:9117"
+  #  security_opt:
+  #    - no-new-privileges:true
+  #  environment:
+  #    - PUID=${PUID}
+  #    - PGID=${PGID}
+  #    - TZ=${TZ}
+  #  volumes:
+  #    - ${DOCKERDIR}/app_data/jackett:/config
+  #    - ${DOCKERDIR}/app_data/jackett:/data
+  #    - /etc/localtime:/etc/localtime:ro
+ 
   # Radarr: movie downloader
   # 
   radarr:
@@ -251,3 +271,15 @@ services:
       - ${DOCKERDIR}/app_data/tautulli:/config
       - ${DOCKERDIR}/app_data/plex:/logs
       - /etc/localtime:/etc/localtime:ro
+  # Flaresolverr
+  #
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    restart: unless-stopped
+    ports:
+      - "8191:8191"
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - LOG_LEVEL=info
