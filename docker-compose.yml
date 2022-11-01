@@ -1,45 +1,41 @@
-# Media stack - Kris 22
-# 
 
 # .env file variables:
 # $PUID
 # $PGID
-# $TZ i.e. "Europe/London" 
-# $DOCKERDIR location of docker and configuration files
+# $TZ i.e. "Europe/London"
+# $VPN_PROVIDER
+# $VPN_USERNAME
+# $VPN_PASSWORD
+# $VPN_COUNTRY
 
-# Transmission
-#
-# LOCAL_NETWORK  CIDR format: i.e. 192.168.1.0/24
-# TRANSMISSION_USERNAME anything you like
-# TRANSMISSION_PASSWORD anything you like
 # MEDIADIR base location for media files, expects subfolders:
-# - app_data
 # - app_data/downloads
-# - app_data/downloads/complete
-# - app_data/downloads/incomplete
 # - movies
-# - tv
+# - tv 
 
-# VPN: for config options: https://haugene.github.io/docker-transmission-openvpn/
-# VPN_PROVIDER 
-# VPN_CONFIG
+# VPN_PROVIDER
 # VPN_USERNAME
 # VPN_PASSWORD
+# VPN_COUNTRY
 
 # Stack applications
 # [3420]  PLEX
-# [9000]  Transmission web UI
-# [8888]  Tinyproxy
+# [8888]  Gluetun HTTP proxy
+# [9000]  Transmission-Flood
 # [9001]  Prowlarr
 # [9002]  Radarr
 # [9003]  Sonarr
 # [9004]  Tdarr
+# [8266]  Tdarr server port
+# [8267]  Tdarr internal node port
 # [9005]  Tautulli
 # [8191]  Flaresolverr
+# [    ]  Recyclarr 
+#
 # [10000] Portainer agent
-# [10001] Ouroboros 
+# [     ] Ouroboros 
 
-version: "3.7"
+version: "3.0"
 
 services:
   # Portainer: Portainer agent for remote management
@@ -49,7 +45,7 @@ services:
     container_name: portainer-agent
     restart: always
     ports:
-      - "10000:9001"
+      - 10000:9001
     security_opt:
       - no-new-privileges:true
     volumes:
@@ -61,8 +57,6 @@ services:
     image: pyouroboros/ouroboros
     container_name: ouroboros
     restart: always
-    ports:
-      - '10001:8080'
     security_opt:
       - no-new-privileges:true
     environment:
@@ -74,12 +68,14 @@ services:
       - IGNORE="portainer-agent"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - media_network
   # NVIDIA toolkit: Transcoding using NVIDIA hardware.
   #
   # Configure the host with the Nvidia toolkit for NVIDIA transcoding
   # https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker
 
-  # PLEX: media server
+  # PLEX: media server: for RAM transcoding set the transcode path to /transcode
   #
   plex:
     image: lscr.io/linuxserver/plex
@@ -89,59 +85,60 @@ services:
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
+      - TZ=${TZ}
       - VERSION=docker
-      - PLEX_CLAIM=${PLEXCLAIM} # optional argument
+      # - PLEX_CLAIM=${PLEXCLAIM} # optional argument
+      # uncomment the belw if usoing NVIDIA GPU's for trandcoding.
+      # - NVIDIA_VISIBLE_DEVICES=all
     volumes:
-      - ${DOCKERDIR}/app_data/plex:/config
-      - ${MEDIADIR}/tv:/tv
-      - ${MEDIADIR}/movies:/movies
-      - ${MEDIADIR}/transcode:/transcode
-      - /etc/localtime:/etc/localtime:ro
-  # Transmission: Download client with VPN over IP Vanish
+      - plex:/config
+      - ${MEDIADIR}:/media
+      - /dev/shm:/transcode
+  # GlueTUN VPN proxy server
   #
-  transmission:
-    image: haugene/transmission-openvpn:latest
-    container_name: transmission-openvpn
-    restart: unless-stopped
-    ports:
-      - "9000:9091"
-      - "8888:8888"
+  gluetun:
+    image: qmcgaw/gluetun
+    container_name: gluetun
+    restart: always
     cap_add:
       - NET_ADMIN
-    dns:
-      - 1.1.1.1 # Change DNS if needed
-      - 1.0.0.1
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    ports:
+      - 8888:8888/tcp
+      # Transmission
+      - 9000:9091
+      - 51413:51413
+      - 51413:51413/udp
     security_opt:
       - no-new-privileges:true
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
-      - OPENVPN_PROVIDER=${VPN_PROVIDER}
-      - OPENVPN_CONFIG=${VPN_CONFIG}
-      - OPENVPN_USERNAME=${VPN_USERNAME}
+      - VPN_SERVICE_PROVIDER=${VPN_PROVIDER}
+      - OPENVPN_USER=${VPN_USERNAME}
       - OPENVPN_PASSWORD=${VPN_PASSWORD}
-      - OPENVPN_OPTS=--inactive 3600 --ping 10 --ping-exit 60
-      - CREATE_TUN_DEVICE=true
-      - LOCAL_NETWORK=${LOCAL_NETWORK}
-      - TRANSMISSION_RPC_AUTHENTICATION_REQUIRED=true
-      - TRANSMISSION_RPC_HOST_WHITELIST="127.0.0.1,192.168.*.*" # Add additional networks as required
-      - TRANSMISSION_RPC_USERNAME=${TRANSMISSION_USERNAME}
-      - TRANSMISSION_RPC_PASSWORD=${TRANSMISSION_PASSWORD}
-      - TRANSMISSION_UMASK=002
-      - TRANSMISSION_RATIO_LIMIT_ENABLED=true
-      - TRANSMISSION_RATIO_LIMIT=0
-      - TRANSMISSION_DOWNLOAD_DIR=/downloads
-      - TRANSMISSION_INCOMPLETE_DIR=/incomplete
-      - WEBPROXY_ENABLED=true # Used to route Jackett traffic
-      - WEBPROXY_PORT=8888
+      - SERVER_COUNTRIES=${VPN_COUNTRY}
+      - HTTPPROXY=on
+  # Transmission: Torrent Client
+  #
+  transmission:
+    image: lscr.io/linuxserver/transmission:latest
+    container_name: transmission
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - TRANSMISSION_WEB_HOME=/flood-for-transmission/
     volumes:
-      - ${DOCKERDIR}/app_data/transmission/config:/config
-      - ${DOCKERDIR}/app_data/transmission/data:/data
-      - ${DOCKERDIR}/app_data/transmission/shared:/data
-      - ${MEDIADIR}/app_data/downloads/completed:/downloads
-      - ${MEDIADIR}/app_data/downloads/incomplete:/incomplete
-      - /etc/localtime:/etc/localtime:ro     
+      - transmission:/config
+      - ${MEDIADIR}/app_data/downloads:/downloads
+      - ${MEDIADIR}/app_data/watch:/watch
+    network_mode: service:gluetun
   # Prowwlarr: Torrtent proxy
   # 
   prowlarr:
@@ -149,7 +146,7 @@ services:
     container_name: prowlarr
     restart: unless-stopped
     ports:
-      - "9001:9696"
+      - 9001:9696
     security_opt:
       - no-new-privileges:true
     environment:
@@ -157,28 +154,9 @@ services:
       - PGID=${PGID}
       - TZ=${TZ}
     volumes:
-      - ${DOCKERDIR}/app_data/prowlarr:/config
-      - /etc/localtime:/etc/localtime:ro
-
-  # Jackett: torrent poxy: replaced by Prowlarr 
-  #
-  #jackett:
-  #  image: "linuxserver/jackett"
-  #  container_name: jackett
-  #  restart: unless-stopped
-  #  ports:
-  #    - "9001:9117"
-  #  security_opt:
-  #    - no-new-privileges:true
-  #  environment:
-  #    - PUID=${PUID}
-  #    - PGID=${PGID}
-  #    - TZ=${TZ}
-  #  volumes:
-  #    - ${DOCKERDIR}/app_data/jackett:/config
-  #    - ${DOCKERDIR}/app_data/jackett:/data
-  #    - /etc/localtime:/etc/localtime:ro
- 
+      - prowlarr:/config
+    networks:
+      - media_network
   # Radarr: movie downloader
   # 
   radarr:
@@ -186,7 +164,7 @@ services:
     container_name: radarr
     restart: unless-stopped
     ports:
-      - "9002:7878"
+      - 9002:7878
     security_opt:
       - no-new-privileges:true
     environment:
@@ -195,18 +173,19 @@ services:
       - TZ=${TZ}
       - UMASK_SET=002
     volumes:
-      - ${DOCKERDIR}/app_data/radarr:/config
-      - ${MEDIADIR}/app_data/downloads/completed:/downloads
+      - radarr:/config
+      - ${MEDIADIR}/app_data/downloads/complete:/downloads/complete
       - ${MEDIADIR}/movies:/movies
-      - /etc/localtime:/etc/localtime:ro
-  # Radarr: TV downloader
+    networks:
+      - media_network
+  # Sonarr: TV downloader
   # 
   sonarr:
     image: "linuxserver/sonarr"
     container_name: sonarr
     restart: unless-stopped
     ports:
-      - "9003:8989"
+      - 9003:8989
     security_opt:
       - no-new-privileges:true
     environment:
@@ -215,10 +194,12 @@ services:
       - TZ=${TZ}
       - UMASK_SET=002
     volumes:
-      - ${DOCKERDIR}/app_data/sonarr:/config
-      - ${MEDIADIR}/app_data/downloads/completed:/downloads
+      - sonarr:/config
+      - ${MEDIADIR}/app_data/downloads/complete:/downloads/complete
       - ${MEDIADIR}/tv:/tv
       - /etc/localtime:/etc/localtime:ro
+    networks:
+      - media_network
   # Tdarr: Media transcoder
   #
   tdarr:
@@ -243,16 +224,17 @@ services:
       - serverPort=8266
       - webUIPort=8265
       - internalNode=true
-      - nodeID=MyInternalNode
+      - nodeID=InternalNode
       - nodeIP=0.0.0.0
       - nodePort=8267 
     volumes:
-    - ${DOCKERDIR}/app_data/tdarr/server:/app/server
-    - ${DOCKERDIR}/app_data/tdarr/configs:/app/configs
-    - ${DOCKERDIR}/app_data/tdarr/logs:/app/logs
+    - tdarr_server:/app/server
+    - tdarr_config:/app/configs
+    - tdarr_logs:/app/logs
     - ${MEDIADIR}:/media
-    - ${MEDIADIR}/transcode:/temp
-    - /etc/localtime:/etc/localtime:ro
+    - /dev/shm:/temp
+    networks:
+      - media_network
   # Tautulli: PLEX server monitoring
   #
   tautulli:
@@ -260,7 +242,7 @@ services:
     container_name: tautulli
     restart: unless-stopped
     ports:
-      - "9005:8181"
+      - 9005:8181
     security_opt:
       - no-new-privileges:true
     environment:
@@ -268,10 +250,10 @@ services:
       - PGID=${PGID}
       - TZ=${TZ}
     volumes:
-      - ${DOCKERDIR}/app_data/tautulli:/config
-      - ${DOCKERDIR}/app_data/plex:/logs
-      - /etc/localtime:/etc/localtime:ro
-  # Flaresolverr
+      - tautulli:/config
+    networks:
+      - media_network
+  # Flaresolverr: Cloudflare proxy for Prowlarr
   #
   flaresolverr:
     image: ghcr.io/flaresolverr/flaresolverr:latest
@@ -283,3 +265,34 @@ services:
       - no-new-privileges:true
     environment:
       - LOG_LEVEL=info
+    networks:
+      - media_network
+  # Recyclarr: Trash guide sync: https://recyclarr.dev/wiki/getting-started
+  #
+  recyclarr:
+    image: ghcr.io/recyclarr/recyclarr
+    container_name: recyclarr
+    init: true
+    environment: 
+      - TZ=${TZ}
+    user: ${PUID}:${PGID}
+    volumes:
+      - recyclarr:/config
+    networks:
+      - media_network
+
+networks:
+  media_network:
+    driver: bridge
+
+volumes:
+  plex:
+  transmission:
+  prowlarr:
+  radarr:
+  sonarr:
+  tdarr_server:
+  tdarr_config:
+  tdarr_logs:
+  tautulli:
+  recyclarr:
